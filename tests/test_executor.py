@@ -33,13 +33,17 @@ def test_dry_run_does_not_call_create(caplog):
 
 
 def test_apply_creates_album(caplog):
+    from immich_folder_organizer.marker import MARKER
+
     client = _make_client(album_exists=False)
     executor = Executor(client, apply=True)
 
     with caplog.at_level(logging.INFO):
         result = executor.ensure_album("My Album")
 
-    client.create_album.assert_called_once_with("My Album", "")
+    client.create_album.assert_called_once()
+    _, call_desc = client.create_album.call_args[0]
+    assert MARKER in call_desc
     assert result == "new-id"
 
 
@@ -89,6 +93,60 @@ def test_sync_assets_apply_remove():
 
     client.remove_assets.assert_called_once_with("alb-id", ["r1"])
     client.add_assets.assert_not_called()
+
+
+def test_ensure_album_adopts_unmarked_existing(caplog):
+    from immich_folder_organizer.marker import MARKER
+
+    client = MagicMock()
+    existing = MagicMock()
+    existing.id = "alb-id"
+    existing.description = "Plain description"
+    client.get_album_by_name.return_value = existing
+
+    executor = Executor(client, apply=True)
+    with caplog.at_level(logging.WARNING):
+        result = executor.ensure_album("My Album")
+
+    # Must update description with marker
+    client.update_album.assert_called_once()
+    _, kwargs = client.update_album.call_args
+    assert MARKER in kwargs["description"]
+    assert result == "alb-id"
+    assert "adopt" in caplog.text.lower()
+
+
+def test_ensure_album_dry_run_adopts_without_update(caplog):
+    from immich_folder_organizer.marker import MARKER
+
+    client = MagicMock()
+    existing = MagicMock()
+    existing.id = "alb-id"
+    existing.description = "Plain"
+    client.get_album_by_name.return_value = existing
+
+    executor = Executor(client, apply=False)
+    with caplog.at_level(logging.WARNING):
+        result = executor.ensure_album("My Album")
+
+    client.update_album.assert_not_called()
+    assert result == "alb-id"
+
+
+def test_ensure_album_marked_album_no_update(caplog):
+    from immich_folder_organizer.marker import with_marker
+
+    client = MagicMock()
+    existing = MagicMock()
+    existing.id = "alb-id"
+    existing.description = with_marker("Existing description")
+    client.get_album_by_name.return_value = existing
+
+    executor = Executor(client, apply=True)
+    executor.ensure_album("My Album")
+
+    client.create_album.assert_not_called()
+    client.update_album.assert_not_called()
 
 
 def test_sync_assets_dry_run_no_api_calls():

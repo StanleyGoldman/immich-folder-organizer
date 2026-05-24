@@ -162,3 +162,41 @@ def test_shared_asset_across_albums_reconciled_independently():
 
     assert plan_a.to_add == ["shared"]
     assert plan_b.to_add == ["shared"]
+
+
+def test_reconcile_markers_new_album_has_marker():
+    """reconcile_album_state detects no album → create=True."""
+    from immich_folder_organizer.reconciler import reconcile_album_state
+    from immich_folder_organizer.marker import MARKER
+
+    config = _album_config(["/photos"])
+    plan = reconcile_album_state(config, existing_album=None)
+    assert plan.create is True
+    assert plan.adopt is False
+
+
+def test_reconcile_markers_managed_album_recognized():
+    from immich_folder_organizer.reconciler import reconcile_album_state
+    from immich_folder_organizer.marker import MARKER, with_marker
+
+    existing = MagicMock()
+    existing.id = "alb-1"
+    existing.description = with_marker("User description")
+
+    config = _album_config(["/photos"])
+    plan = reconcile_album_state(config, existing_album=existing)
+    assert plan.create is False
+    assert plan.adopt is False
+
+
+def test_reconcile_markers_unmarked_album_triggers_adoption():
+    from immich_folder_organizer.reconciler import reconcile_album_state
+
+    existing = MagicMock()
+    existing.id = "alb-1"
+    existing.description = "Manually created album"
+
+    config = _album_config(["/photos"])
+    plan = reconcile_album_state(config, existing_album=existing)
+    assert plan.create is False
+    assert plan.adopt is True
