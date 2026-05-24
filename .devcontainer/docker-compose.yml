@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TZ: ${TZ:-America/Los_Angeles}
+        GIT_DELTA_VERSION: "0.18.2"
+        ZSH_IN_DOCKER_VERSION: "1.2.0"
+    command: sleep infinity
+    volumes:
+      - ..:/workspace/immich-folder-organizer
+      - bashhistory:/commandhistory
+      - claude-code-config:/home/node/.claude
+
+volumes:
+  bashhistory:
+  claude-code-config:
