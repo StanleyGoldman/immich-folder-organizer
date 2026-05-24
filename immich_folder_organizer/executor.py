@@ -22,3 +22,19 @@ class Executor:
         else:
             log.info("[dry-run] Would create album: %s", name)
             return None
+
+    def sync_assets(self, album_id: str, album_name: str, plan) -> None:
+        """Apply or preview the asset add/remove plan for one album."""
+        if plan.to_add:
+            if self._apply:
+                self._client.add_assets(album_id, plan.to_add)
+                log.info("[add] %d asset(s) added to '%s'", len(plan.to_add), album_name)
+            else:
+                log.info("[dry-run] Would add %d asset(s) to '%s'", len(plan.to_add), album_name)
+
+        if plan.to_remove:
+            if self._apply:
+                self._client.remove_assets(album_id, plan.to_remove)
+                log.info("[remove] %d asset(s) removed from '%s'", len(plan.to_remove), album_name)
+            else:
+                log.info("[dry-run] Would remove %d asset(s) from '%s'", len(plan.to_remove), album_name)
