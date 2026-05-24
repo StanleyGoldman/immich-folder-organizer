@@ -94,6 +94,3 @@ RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/node/.bashrc \
 
 # Install uv for fast Python env / package management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-# Pre-create the venv so the VS Code Python extension finds it on first open
-RUN uv venv /workspace/immich-folder-organizer/.venv
