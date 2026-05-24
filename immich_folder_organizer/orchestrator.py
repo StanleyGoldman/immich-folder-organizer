@@ -1,5 +1,6 @@
 import logging
 import sys
+import time
 
 from .config import load_config, load_env, ConfigError
 from .immich_client import ImmichClient
@@ -33,8 +34,12 @@ def main():
     if not env.apply:
         log.info("DRY RUN — no changes will be made (set APPLY=1 to commit)")
 
+    t_start = time.monotonic()
+    log.info("Starting run: %d album(s) declared in config", len(config.albums))
+
     all_assets = client.get_all_assets()
     all_users = client.get_all_users()
+    log.info("Fetched %d asset(s) and %d user(s) from Immich", len(all_assets), len(all_users))
 
     for album_cfg in config.albums:
         album_id = executor.ensure_album(album_cfg.name, album_cfg.description or "")
@@ -61,8 +66,26 @@ def main():
         share_plan = reconcile_shares(album_cfg, album_info.album_users or [], all_users)
         executor.sync_shares(album_id, album_cfg.name, share_plan)
 
+        if _is_noop(asset_plan, prop_plan, share_plan):
+            log.info("[ok] '%s' is up to date (%d asset(s))", album_cfg.name, len(current_ids))
+
     if config.delete_orphaned_albums:
         _delete_orphaned_albums(client, executor, config)
+
+    elapsed = time.monotonic() - t_start
+    log.info("Run complete in %.1fs", elapsed)
+
+
+def _is_noop(asset_plan, prop_plan, share_plan) -> bool:
+    no_assets = not asset_plan.to_add and not asset_plan.to_remove
+    no_props = (
+        prop_plan.description is None
+        and prop_plan.sort_order is None
+        and prop_plan.is_activity_enabled is None
+        and prop_plan.thumbnail_asset_id is None
+    )
+    no_shares = share_plan.skip or (not share_plan.to_add and not share_plan.to_remove)
+    return no_assets and no_props and no_shares
 
 
 def _delete_orphaned_albums(client, executor, config):
