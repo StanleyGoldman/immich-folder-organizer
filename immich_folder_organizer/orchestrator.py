@@ -4,7 +4,7 @@ import sys
 from .config import load_config, load_env, ConfigError
 from .immich_client import ImmichClient
 from .executor import Executor
-from .reconciler import reconcile, reconcile_properties
+from .reconciler import reconcile, reconcile_properties, reconcile_shares
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,6 +34,7 @@ def main():
         log.info("DRY RUN — no changes will be made (set APPLY=1 to commit)")
 
     all_assets = client.get_all_assets()
+    all_users = client.get_all_users()
 
     for album_cfg in config.albums:
         album_id = executor.ensure_album(album_cfg.name, album_cfg.description or "")
@@ -56,6 +57,9 @@ def main():
 
         prop_plan = reconcile_properties(album_cfg, album_info, album_assets)
         executor.sync_properties(album_id, album_cfg.name, prop_plan)
+
+        share_plan = reconcile_shares(album_cfg, album_info.album_users or [], all_users)
+        executor.sync_shares(album_id, album_cfg.name, share_plan)
 
     if config.delete_orphaned_albums:
         _delete_orphaned_albums(client, executor, config)

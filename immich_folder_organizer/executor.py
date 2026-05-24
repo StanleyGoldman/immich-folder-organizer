@@ -61,6 +61,35 @@ class Executor:
         else:
             log.info("[dry-run] Would update properties of '%s': %s", album_name, list(updates))
 
+    def sync_shares(self, album_id: str, album_name: str, share_plan) -> None:
+        """Apply or preview share additions and revocations."""
+        if share_plan.skip:
+            return
+
+        for ref in share_plan.missing_users:
+            log.warning("[shares] User '%s' not found in Immich — skipping", ref)
+
+        for user_id, role in share_plan.to_add:
+            if self._apply:
+                self._client.share_album(album_id, user_id, role)
+                log.info("[share] Shared '%s' with %s as %s", album_name, user_id, role)
+            else:
+                log.info("[dry-run] Would share '%s' with %s as %s", album_name, user_id, role)
+
+        for user_id in share_plan.to_remove:
+            if self._apply:
+                self._client.revoke_share(album_id, user_id)
+                log.info("[share] Revoked access of %s from '%s'", user_id, album_name)
+            else:
+                log.info("[dry-run] Would revoke access of %s from '%s'", user_id, album_name)
+
+    def delete_orphaned_album(self, album_id: str, album_name: str) -> None:
+        if self._apply:
+            self._client.delete_album(album_id)
+            log.info("[delete] Orphaned album deleted: '%s'", album_name)
+        else:
+            log.info("[dry-run] Would delete orphaned album: '%s'", album_name)
+
     def sync_assets(self, album_id: str, album_name: str, plan) -> None:
         """Apply or preview the asset add/remove plan for one album."""
         if plan.to_add:

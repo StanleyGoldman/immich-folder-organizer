@@ -13,6 +13,14 @@ class AlbumPlan:
 
 
 @dataclass
+class SharePlan:
+    skip: bool = False
+    to_add: list = field(default_factory=list)   # list of (user_id, role) tuples
+    to_remove: list = field(default_factory=list) # list of user_id strings
+    missing_users: list = field(default_factory=list)
+
+
+@dataclass
 class AlbumStatePlan:
     create: bool = False
     adopt: bool = False
@@ -75,6 +83,38 @@ def _resolve_thumbnail(setting: str, album_assets: list) -> Optional[str]:
         if asset.original_path == setting:
             return asset.id
     return None
+
+
+def reconcile_shares(album_config, current_shares: list, all_users: list) -> SharePlan:
+    """Compute share additions and removals. Returns skip=True when share_with is omitted."""
+    if album_config.share_with is None:
+        return SharePlan(skip=True)
+
+    def _resolve_user(ref: str):
+        for u in all_users:
+            if u.name == ref or u.email == ref:
+                return u
+        return None
+
+    desired = {}  # user_id -> role
+    missing = []
+    for entry in album_config.share_with:
+        user = _resolve_user(entry.user)
+        if user is None:
+            missing.append(entry.user)
+            continue
+        desired[user.id] = entry.role
+
+    current = {au.user.id: au.role for au in current_shares}
+
+    to_add = [
+        (uid, role)
+        for uid, role in desired.items()
+        if uid not in current or current[uid] != role
+    ]
+    to_remove = [uid for uid in current if uid not in desired]
+
+    return SharePlan(to_add=to_add, to_remove=to_remove, missing_users=missing)
 
 
 def reconcile(album_config, current_ids: list, all_assets: list) -> AlbumPlan:
