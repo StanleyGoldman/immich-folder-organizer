@@ -111,3 +111,37 @@ def test_no_spurious_removes():
     plan = reconcile(config, current_ids, all_assets)
 
     assert plan.to_remove == []
+
+
+def test_multiple_paths_union_of_assets():
+    config = _album_config(["/path1", "/path2"])
+    all_assets = [
+        _asset("1", "/path1/a.jpg"),
+        _asset("2", "/path2/b.jpg"),
+        _asset("3", "/other/c.jpg"),
+    ]
+    plan = reconcile(config, [], all_assets)
+    assert set(plan.to_add) == {"1", "2"}
+
+
+def test_multiple_paths_no_double_add():
+    config = _album_config(["/a", "/a/sub"])
+    all_assets = [_asset("1", "/a/sub/photo.jpg")]
+    # Asset matches both /a and /a/sub but should only appear once in to_add
+    plan = reconcile(config, [], all_assets)
+    assert plan.to_add == ["1"]
+
+
+def test_shared_asset_across_albums_reconciled_independently():
+    """Shared asset (two albums, same path) — each album is reconciled separately."""
+    shared_asset = _asset("shared", "/vacation/photo.jpg")
+    all_assets = [shared_asset]
+
+    config_a = _album_config(["/vacation"])
+    config_b = _album_config(["/vacation"])
+
+    plan_a = reconcile(config_a, [], all_assets)
+    plan_b = reconcile(config_b, [], all_assets)
+
+    assert plan_a.to_add == ["shared"]
+    assert plan_b.to_add == ["shared"]
