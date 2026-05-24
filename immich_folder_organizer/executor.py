@@ -40,6 +40,27 @@ class Executor:
         log.info("[manage] Album '%s' is tool-managed", name)
         return existing.id
 
+    def sync_properties(self, album_id: str, album_name: str, prop_plan) -> None:
+        """Apply or preview declared album properties."""
+        updates = {}
+        if prop_plan.description is not None:
+            updates["description"] = prop_plan.description
+        if prop_plan.sort_order is not None:
+            updates["sort_order"] = prop_plan.sort_order
+        if prop_plan.is_activity_enabled is not None:
+            updates["is_activity_enabled"] = prop_plan.is_activity_enabled
+        if prop_plan.thumbnail_asset_id is not None:
+            updates["thumbnail_asset_id"] = prop_plan.thumbnail_asset_id
+
+        if not updates:
+            return
+
+        if self._apply:
+            self._client.update_album(album_id, **updates)
+            log.info("[props] Updated properties of '%s': %s", album_name, list(updates))
+        else:
+            log.info("[dry-run] Would update properties of '%s': %s", album_name, list(updates))
+
     def sync_assets(self, album_id: str, album_name: str, plan) -> None:
         """Apply or preview the asset add/remove plan for one album."""
         if plan.to_add:
