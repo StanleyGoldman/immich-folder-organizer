@@ -60,3 +60,43 @@ def test_dry_run_existing_album_is_no_op():
     result = executor.ensure_album("My Album")
     client.create_album.assert_not_called()
     assert result == "existing-id"
+
+
+def _make_plan(to_add=None, to_remove=None):
+    plan = MagicMock()
+    plan.to_add = to_add or []
+    plan.to_remove = to_remove or []
+    return plan
+
+
+def test_sync_assets_apply_add():
+    client = MagicMock()
+    executor = Executor(client, apply=True)
+    plan = _make_plan(to_add=["a1", "a2"])
+
+    executor.sync_assets("alb-id", "My Album", plan)
+
+    client.add_assets.assert_called_once_with("alb-id", ["a1", "a2"])
+    client.remove_assets.assert_not_called()
+
+
+def test_sync_assets_apply_remove():
+    client = MagicMock()
+    executor = Executor(client, apply=True)
+    plan = _make_plan(to_remove=["r1"])
+
+    executor.sync_assets("alb-id", "My Album", plan)
+
+    client.remove_assets.assert_called_once_with("alb-id", ["r1"])
+    client.add_assets.assert_not_called()
+
+
+def test_sync_assets_dry_run_no_api_calls():
+    client = MagicMock()
+    executor = Executor(client, apply=False)
+    plan = _make_plan(to_add=["a1"], to_remove=["r1"])
+
+    executor.sync_assets("alb-id", "My Album", plan)
+
+    client.add_assets.assert_not_called()
+    client.remove_assets.assert_not_called()
