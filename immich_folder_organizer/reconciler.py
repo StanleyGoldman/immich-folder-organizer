@@ -117,6 +117,16 @@ def reconcile_shares(album_config, current_shares: list, all_users: list) -> Sha
     return SharePlan(to_add=to_add, to_remove=to_remove, missing_users=missing)
 
 
+def find_orphaned_albums(all_albums: list, declared_names: set) -> list:
+    """Return marker-bearing albums whose names are not in declared_names."""
+    return [
+        album
+        for album in all_albums
+        if album.album_name not in declared_names
+        and has_marker(album.description or "")
+    ]
+
+
 def reconcile(album_config, current_ids: list, all_assets: list) -> AlbumPlan:
     """Compute which assets to add and remove for a single album."""
     matching_ids = {

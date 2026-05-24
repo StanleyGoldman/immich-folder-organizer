@@ -4,7 +4,7 @@ import sys
 from .config import load_config, load_env, ConfigError
 from .immich_client import ImmichClient
 from .executor import Executor
-from .reconciler import reconcile, reconcile_properties, reconcile_shares
+from .reconciler import reconcile, reconcile_properties, reconcile_shares, find_orphaned_albums
 
 logging.basicConfig(
     level=logging.INFO,
@@ -66,14 +66,8 @@ def main():
 
 
 def _delete_orphaned_albums(client, executor, config):
-    from .marker import has_marker
-
     declared_names = {alb.name for alb in config.albums}
     all_albums = client.get_all_albums()
-
-    for album in all_albums:
-        if album.album_name in declared_names:
-            continue
-        if not has_marker(album.description or ""):
-            continue
+    orphans = find_orphaned_albums(all_albums, declared_names)
+    for album in orphans:
         executor.delete_orphaned_album(album.id, album.album_name)
