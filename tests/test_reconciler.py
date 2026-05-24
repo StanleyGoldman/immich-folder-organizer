@@ -132,6 +132,23 @@ def test_multiple_paths_no_double_add():
     assert plan.to_add == ["1"]
 
 
+def test_exclude_removes_matching_asset():
+    config = _album_config(["/photos"], exclude=["/photos/private"])
+    all_assets = [
+        _asset("1", "/photos/a.jpg"),
+        _asset("2", "/photos/private/b.jpg"),
+    ]
+    plan = reconcile(config, [], all_assets)
+    assert plan.to_add == ["1"]
+
+
+def test_exclude_wins_over_include():
+    config = _album_config(["/a"], exclude=["/a/b"])
+    all_assets = [_asset("1", "/a/b/photo.jpg")]
+    plan = reconcile(config, [], all_assets)
+    assert plan.to_add == []
+
+
 def test_shared_asset_across_albums_reconciled_independently():
     """Shared asset (two albums, same path) — each album is reconciled separately."""
     shared_asset = _asset("shared", "/vacation/photo.jpg")

@@ -41,3 +41,15 @@ def test_excludes_none_is_same_as_empty():
 def test_asset_is_exclude_prefix_only_not_excluded():
     # /abcdef should NOT be excluded by /abc
     assert is_member("/abcdef/photo.jpg", ["/abcdef"], excludes=["/abc"])
+
+
+def test_under_exclude_but_not_include_still_excluded():
+    assert not is_member("/a/private/photo.jpg", ["/b"], excludes=["/a/private"])
+
+
+def test_multiple_excludes_any_match_excludes():
+    assert not is_member("/a/x/photo.jpg", ["/a"], excludes=["/a/y", "/a/x"])
+
+
+def test_empty_excludes_list_no_exclusion():
+    assert is_member("/a/photo.jpg", ["/a"], excludes=[])
