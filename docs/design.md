@@ -15,6 +15,7 @@ For vocabulary: [CONTEXT.md](../CONTEXT.md). For the architectural rationale: [A
 | `IMMICH_API_KEY_FILE` | one of | Path to a file containing the API key (for Docker secret mounts) |
 | `APPLY` | no | `1` to commit changes. Defaults to dry-run — tool prints what it *would* do without changing anything. |
 | `CRON_EXPRESSION` | no | If set, container schedules itself via in-container cron. If unset, runs once and exits. |
+| `RUN_ON_STARTUP` | no | When set alongside `CRON_EXPRESSION`, runs the tool once immediately on container start before handing off to cron. Useful for verifying config without waiting for the first tick. Ignored when `CRON_EXPRESSION` is unset (one-shot mode already runs on start). |
 | `TZ` | no | Timezone for the cron schedule. |
 | `CONFIG_FILE` | no | Path to the album YAML inside the container. Default `/config/albums.yaml`. |
 

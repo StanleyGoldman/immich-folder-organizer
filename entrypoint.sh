@@ -30,6 +30,11 @@ if [ -n "$CRON_EXPRESSION" ]; then
     _debug "crontab written to $CRONTAB_FILE:"
     if [ -n "$DEBUG" ]; then cat "$CRONTAB_FILE" >&2; fi
 
+    if [ -n "$RUN_ON_STARTUP" ]; then
+        echo "[startup] RUN_ON_STARTUP set — running once before handing off to supercronic" >&2
+        "$PYTHON" -m immich_folder_organizer
+    fi
+
     # -no-reap: workaround for supercronic v0.2.33 zombie reaper crashing at
     #           startup with "Failed to fork exec: no such file or directory"
     #           when running as pid 1. The cron job (python) exits cleanly so
