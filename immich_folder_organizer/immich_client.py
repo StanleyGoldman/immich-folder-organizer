@@ -1,5 +1,5 @@
 import asyncio
-import math
+import logging
 from typing import Optional
 
 from immichpy import AsyncClient
@@ -17,6 +17,8 @@ from immichpy.client.generated.models import (
 from immichpy.client.generated.models.metadata_search_dto import MetadataSearchDto
 
 _PAGE_SIZE = 1000
+
+log = logging.getLogger(__name__)
 
 
 class ImmichClient:
@@ -93,16 +95,33 @@ class ImmichClient:
         self._run(lambda c: c.albums.delete_album(id=_id))
 
     def get_all_assets(self) -> list:
+        """Fetch every asset in the library, paginated.
+
+        Uses the `next_page` cursor from each response as the source of truth
+        for pagination. The `total` field in the search response was previously
+        used but it returns the count of items in the current batch, not the
+        overall match count — so trusting it caused the loop to exit after
+        the first page.
+        """
         assets = []
         page = 1
         while True:
             dto = MetadataSearchDto(page=page, size=_PAGE_SIZE)
             result = self._run(lambda c, d=dto: c.search.search_assets(metadata_search_dto=d))
-            assets.extend(result.assets.items)
-            total_pages = math.ceil(result.assets.total / _PAGE_SIZE)
-            if page >= total_pages or result.assets.total == 0:
+            page_items = result.assets.items
+            if not page_items:
                 break
-            page += 1
+            assets.extend(page_items)
+            log.debug("Fetched assets page %d (%d items, %d total so far)", page, len(page_items), len(assets))
+
+            next_page = result.assets.next_page
+            if not next_page:
+                break
+            try:
+                page = int(next_page)
+            except (TypeError, ValueError):
+                # Unknown cursor format — fall back to incrementing
+                page += 1
         return assets
 
     def get_all_users(self) -> list:
