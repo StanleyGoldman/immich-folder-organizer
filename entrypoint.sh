@@ -18,16 +18,6 @@ if [ -z "$PYTHON" ]; then
     exit 1
 fi
 
-# Verify python3 can actually execute (catches missing shared libs after apt autoremove)
-_debug "python3 exec test: $($PYTHON --version 2>&1 || echo 'FAILED — binary exists but cannot execute')"
-
-# Verify /bin/sh exists — supercronic runs all jobs via /bin/sh -c
-_debug "sh: $(ls -la /bin/sh 2>&1 || echo 'NOT FOUND')"
-_debug "sh exec test: $(/bin/sh -c 'echo ok' 2>&1 || echo 'FAILED — /bin/sh cannot execute')"
-
-# Verify supercronic itself (wrong-arch binary would print garbage or fail)
-_debug "supercronic version: $(supercronic -version 2>&1 | head -1 || echo 'FAILED to invoke supercronic')"
-
 if [ -n "$CRON_EXPRESSION" ]; then
     _debug "CRON_EXPRESSION=$CRON_EXPRESSION"
     _debug "TZ=${TZ:-not set}"
