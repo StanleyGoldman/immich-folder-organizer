@@ -30,7 +30,13 @@ if [ -n "$CRON_EXPRESSION" ]; then
     _debug "crontab written to $CRONTAB_FILE:"
     if [ -n "$DEBUG" ]; then cat "$CRONTAB_FILE" >&2; fi
 
-    exec supercronic "$CRONTAB_FILE"
+    # -no-reap: workaround for supercronic v0.2.33 zombie reaper crashing at
+    #           startup with "Failed to fork exec: no such file or directory"
+    #           when running as pid 1. The cron job (python) exits cleanly so
+    #           we don't need zombie reaping.
+    # -passthrough-logs: print job stdout/stderr directly instead of wrapping
+    #           each line in a supercronic INFO log entry.
+    exec supercronic -no-reap -passthrough-logs "$CRONTAB_FILE"
 else
     _debug "no CRON_EXPRESSION — one-shot run"
     _debug "APPLY=${APPLY:-not set}"
