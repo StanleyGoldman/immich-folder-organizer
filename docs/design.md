@@ -85,10 +85,10 @@ On every run:
 1. **Load YAML.** Parse `CONFIG_FILE`.
 2. **Authenticate.** Connect to Immich using `IMMICH_URL` + the API key. Requires Immich v3.
 3. **For each album in YAML:**
-   - Look up by name among the albums the API key's user owns (albums shared with that user are ignored). If absent, create it with the marker in the description.
+   - Look up by name among the API key user's own albums; albums other users have shared with them are ignored. If absent, create it with the marker in the description.
    - If present and marker-bearing → already managed.
    - If present and marker-less → **adopt with warning** (log loudly, add marker, proceed).
-   - Reconcile asset list: query Immich for assets whose path is under any include path and not under any exclude path. Add missing, remove extras. Only timeline assets are matched; archived, hidden and locked assets never are, so an archived asset already in the album counts as an extra.
+   - Reconcile asset list: query Immich for assets whose path is under any include path and not under any exclude path. Add missing, remove extras. Only timeline assets are matched; archived, hidden and locked assets never are, so an archived asset already in the album counts as an extra. Hidden and locked assets in the album are not seen at all, so they are left in place.
    - Reconcile declared properties (description, share_with, etc.). Omitted fields untouched. The album owner is never treated as a share, so `share_with` cannot revoke it.
 4. **If `delete_orphaned_albums: true`:** find marker-bearing albums whose names are not in YAML, delete them.
 5. **If `APPLY` unset:** print everything as a preview, change nothing.

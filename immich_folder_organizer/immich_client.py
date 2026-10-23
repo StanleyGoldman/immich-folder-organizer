@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from typing import Optional
+from uuid import UUID
 
 from immichpy import AsyncClient
 from immichpy.client.generated.models import (
@@ -35,10 +36,10 @@ class ImmichClient:
         return asyncio.run(_call())
 
     def get_all_albums(self) -> list:
-        # Owned only: Immich v3 also returns albums shared with us by default
+        # Immich v3 also returns albums other users shared with us by default
         return self._run(lambda c: c.albums.get_all_albums(is_owned=True))
 
-    def get_album_info(self, album_id: str) -> AlbumResponseDto:
+    def get_album_info(self, album_id: UUID) -> AlbumResponseDto:
         return self._run(lambda c: c.albums.get_album_info(id=album_id))
 
     def get_album_by_name(self, name: str) -> Optional[AlbumResponseDto]:
@@ -55,7 +56,7 @@ class ImmichClient:
             )
         )
 
-    def update_album(self, album_id: str, **kwargs) -> AlbumResponseDto:
+    def update_album(self, album_id: UUID, **kwargs) -> AlbumResponseDto:
         dto_kwargs = {}
         if "description" in kwargs:
             dto_kwargs["description"] = kwargs["description"]
@@ -70,7 +71,7 @@ class ImmichClient:
         _id = album_id
         return self._run(lambda c: c.albums.update_album_info(id=_id, update_album_dto=dto))
 
-    def add_assets(self, album_id: str, asset_ids: list) -> None:
+    def add_assets(self, album_id: UUID, asset_ids: list[UUID]) -> None:
         if not asset_ids:
             return
         _id = album_id
@@ -81,7 +82,7 @@ class ImmichClient:
             )
         )
 
-    def remove_assets(self, album_id: str, asset_ids: list) -> None:
+    def remove_assets(self, album_id: UUID, asset_ids: list[UUID]) -> None:
         if not asset_ids:
             return
         _id = album_id
@@ -92,7 +93,7 @@ class ImmichClient:
             )
         )
 
-    def delete_album(self, album_id: str) -> None:
+    def delete_album(self, album_id: UUID) -> None:
         _id = album_id
         self._run(lambda c: c.albums.delete_album(id=_id))
 
@@ -100,7 +101,7 @@ class ImmichClient:
         """Fetch every timeline asset in the library."""
         return self._search_assets(visibility=AssetVisibility.TIMELINE)
 
-    def get_album_asset_ids(self, album_id: str) -> list:
+    def get_album_asset_ids(self, album_id: UUID) -> list[UUID]:
         """IDs of the album's timeline and archived assets.
 
         Immich v3 no longer returns assets with the album, so this searches
@@ -150,7 +151,7 @@ class ImmichClient:
     def get_all_users(self) -> list:
         return self._run(lambda c: c.users.search_users())
 
-    def share_album(self, album_id: str, user_id: str, role: str) -> None:
+    def share_album(self, album_id: UUID, user_id: UUID, role: str) -> None:
         _id = album_id
         _user = AlbumUserAddDto(
             user_id=user_id,
@@ -161,8 +162,8 @@ class ImmichClient:
             lambda c: c.albums.add_users_to_album(id=_id, add_users_dto=_dto)
         )
 
-    def revoke_share(self, album_id: str, user_id: str) -> None:
+    def revoke_share(self, album_id: UUID, user_id: UUID) -> None:
         _id = album_id
-        # Strict str in immichpy, though user IDs in its models are UUIDs
+        # immichpy types this one parameter as str
         _uid = str(user_id)
         self._run(lambda c: c.albums.remove_user_from_album(id=_id, user_id=_uid))
