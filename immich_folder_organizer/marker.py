@@ -1,4 +1,3 @@
-import os
 # Sentinel written into the description of every album created by this tool.
 # Using a plain-text bracket form because Immich renders HTML comments visibly
 # in the album description UI, which would leak as noise to the user.
