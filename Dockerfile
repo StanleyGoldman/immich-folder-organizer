@@ -16,8 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Runtime dependencies from uv.lock into /app/.venv, using the image's Python
+COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /bin/uv
+ENV UV_PYTHON_DOWNLOADS=never \
+    PATH=/app/.venv/bin:$PATH
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-cache
 
 COPY immich_folder_organizer/ immich_folder_organizer/
 COPY entrypoint.sh /entrypoint.sh

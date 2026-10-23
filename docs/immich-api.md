@@ -1,6 +1,6 @@
 # Immich API assumptions
 
-`ImmichClient` is the only module that talks to Immich, through the `immichpy` client pinned in `requirements.txt`. Its correctness rests on server behavior that the generated models do not show: defaults, filters, and what each response includes. This page lists that behavior as of Immich v3.3.5, so an upgrade can be checked item by item.
+`ImmichClient` is the only module that talks to Immich, through the `immichpy` client pinned in `pyproject.toml` (locked in `uv.lock`). Its correctness rests on server behavior that the generated models do not show: defaults, filters, and what each response includes. This page lists that behavior as of Immich v3.3.5, so an upgrade can be checked item by item.
 
 ## Endpoints and the behavior relied on
 
@@ -24,5 +24,5 @@
      -H "Accept: application/vnd.github.raw"
    ```
    Also `album.service.ts`, `server/src/repositories/search.repository.ts`, `server/src/repositories/album.repository.ts`, `server/src/utils/database.ts` and `server/src/dtos/search.dto.ts`.
-3. Run `scripts/test.sh`. `tests/test_orchestrator.py` runs a full reconciliation against `tests/fake_immich.py`. Update the fake's JSON to the new API shape first, so the tests exercise the new models.
+3. Run `make ci`. `tests/test_orchestrator.py` runs a full reconciliation against `tests/fake_immich.py`. Update the fake's JSON to the new API shape first, so the tests exercise the new models.
 4. Update this page.

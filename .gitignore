@@ -13,3 +13,5 @@ env/
 .mypy_cache/
 .vscode/
 .idea/
+reports/
+.coverage

@@ -93,4 +93,4 @@ RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/node/.bashrc \
   && echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/node/.zshrc
 
 # Install uv for fast Python env / package management
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /usr/local/bin/uv
