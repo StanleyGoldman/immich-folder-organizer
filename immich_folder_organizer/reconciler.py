@@ -1,7 +1,9 @@
 import random as _random
 from dataclasses import dataclass, field
 from typing import Optional
+from uuid import UUID
 
+from .immich_client import AlbumUserRole
 from .marker import has_marker, with_marker
 from .path_matcher import is_member
 
@@ -16,7 +18,7 @@ class AlbumPlan:
 class SharePlan:
     skip: bool = False
     to_add: list = field(default_factory=list)   # list of (user_id, role) tuples
-    to_remove: list = field(default_factory=list) # list of user_id strings
+    to_remove: list = field(default_factory=list) # list of user IDs
     missing_users: list = field(default_factory=list)
 
 
@@ -24,7 +26,7 @@ class SharePlan:
 class AlbumStatePlan:
     create: bool = False
     adopt: bool = False
-    album_id: Optional[str] = None
+    album_id: Optional[UUID] = None
 
 
 @dataclass
@@ -32,7 +34,7 @@ class PropertyPlan:
     description: Optional[str] = None
     sort_order: Optional[str] = None
     is_activity_enabled: Optional[bool] = None
-    thumbnail_asset_id: Optional[str] = None
+    thumbnail_asset_id: Optional[UUID] = None
 
 
 def reconcile_album_state(album_config, existing_album) -> AlbumStatePlan:
@@ -69,7 +71,7 @@ def reconcile_properties(album_config, existing, album_assets: list) -> Property
     return plan
 
 
-def _resolve_thumbnail(setting: str, album_assets: list) -> Optional[str]:
+def _resolve_thumbnail(setting: str, album_assets: list) -> Optional[UUID]:
     if not album_assets:
         return None
     if setting == "first":
@@ -105,7 +107,8 @@ def reconcile_shares(album_config, current_shares: list, all_users: list) -> Sha
             continue
         desired[user.id] = entry.role
 
-    current = {au.user.id: au.role for au in current_shares}
+    # Immich lists the album owner among its users; ownership isn't a share
+    current = {au.user.id: au.role for au in current_shares if au.role != AlbumUserRole.OWNER}
 
     to_add = [
         (uid, role)

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from typing import Optional
+from uuid import UUID
 
 from immichpy import AsyncClient
 from immichpy.client.generated.models import (
@@ -12,6 +13,7 @@ from immichpy.client.generated.models import (
     AddUsersDto,
     AlbumUserRole,
     AssetOrder,
+    AssetVisibility,
     UpdateAlbumDto,
 )
 from immichpy.client.generated.models.metadata_search_dto import MetadataSearchDto
@@ -34,9 +36,10 @@ class ImmichClient:
         return asyncio.run(_call())
 
     def get_all_albums(self) -> list:
-        return self._run(lambda c: c.albums.get_all_albums())
+        # Immich v3 also returns albums other users shared with us by default
+        return self._run(lambda c: c.albums.get_all_albums(is_owned=True))
 
-    def get_album_info(self, album_id: str) -> AlbumResponseDto:
+    def get_album_info(self, album_id: UUID) -> AlbumResponseDto:
         return self._run(lambda c: c.albums.get_album_info(id=album_id))
 
     def get_album_by_name(self, name: str) -> Optional[AlbumResponseDto]:
@@ -53,7 +56,7 @@ class ImmichClient:
             )
         )
 
-    def update_album(self, album_id: str, **kwargs) -> AlbumResponseDto:
+    def update_album(self, album_id: UUID, **kwargs) -> AlbumResponseDto:
         dto_kwargs = {}
         if "description" in kwargs:
             dto_kwargs["description"] = kwargs["description"]
@@ -68,7 +71,7 @@ class ImmichClient:
         _id = album_id
         return self._run(lambda c: c.albums.update_album_info(id=_id, update_album_dto=dto))
 
-    def add_assets(self, album_id: str, asset_ids: list) -> None:
+    def add_assets(self, album_id: UUID, asset_ids: list[UUID]) -> None:
         if not asset_ids:
             return
         _id = album_id
@@ -79,7 +82,7 @@ class ImmichClient:
             )
         )
 
-    def remove_assets(self, album_id: str, asset_ids: list) -> None:
+    def remove_assets(self, album_id: UUID, asset_ids: list[UUID]) -> None:
         if not asset_ids:
             return
         _id = album_id
@@ -90,23 +93,44 @@ class ImmichClient:
             )
         )
 
-    def delete_album(self, album_id: str) -> None:
+    def delete_album(self, album_id: UUID) -> None:
         _id = album_id
         self._run(lambda c: c.albums.delete_album(id=_id))
 
     def get_all_assets(self) -> list:
-        """Fetch every asset in the library, paginated.
+        """Fetch every timeline asset in the library."""
+        return self._search_assets(visibility=AssetVisibility.TIMELINE)
+
+    def get_album_asset_ids(self, album_id: UUID) -> list[UUID]:
+        """IDs of the album's timeline and archived assets.
+
+        Immich v3 no longer returns assets with the album, so this searches
+        by album instead. The two visibilities match what v2's album view
+        returned.
+        """
+        return [
+            asset.id
+            for visibility in (AssetVisibility.TIMELINE, AssetVisibility.ARCHIVE)
+            for asset in self._search_assets(album_ids=[album_id], visibility=visibility)
+        ]
+
+    def _search_assets(self, **filters) -> list:
+        """Run a metadata search with `filters`, following every page.
 
         Uses the `next_page` cursor from each response as the source of truth
         for pagination. The `total` field in the search response was previously
         used but it returns the count of items in the current batch, not the
         overall match count — so trusting it caused the loop to exit after
         the first page.
+
+        Immich v3 only fills `next_cursor` for requests that send `cursor`,
+        `filter` or `orderBy`; page-based requests like this one still get
+        `next_page`.
         """
         assets = []
         page = 1
         while True:
-            dto = MetadataSearchDto(page=page, size=_PAGE_SIZE)
+            dto = MetadataSearchDto(page=page, size=_PAGE_SIZE, **filters)
             result = self._run(lambda c, d=dto: c.search.search_assets(metadata_search_dto=d))
             page_items = result.assets.items
             if not page_items:
@@ -127,7 +151,7 @@ class ImmichClient:
     def get_all_users(self) -> list:
         return self._run(lambda c: c.users.search_users())
 
-    def share_album(self, album_id: str, user_id: str, role: str) -> None:
+    def share_album(self, album_id: UUID, user_id: UUID, role: str) -> None:
         _id = album_id
         _user = AlbumUserAddDto(
             user_id=user_id,
@@ -138,7 +162,8 @@ class ImmichClient:
             lambda c: c.albums.add_users_to_album(id=_id, add_users_dto=_dto)
         )
 
-    def revoke_share(self, album_id: str, user_id: str) -> None:
+    def revoke_share(self, album_id: UUID, user_id: UUID) -> None:
         _id = album_id
-        _uid = user_id
+        # immichpy types this one parameter as str
+        _uid = str(user_id)
         self._run(lambda c: c.albums.remove_user_from_album(id=_id, user_id=_uid))
