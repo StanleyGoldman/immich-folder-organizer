@@ -1,3 +1,7 @@
+## Tests
+
+Run `scripts/test.sh` (pytest in Docker; arguments pass through to pytest).
+
 ## Agent skills
 
 ### Issue tracker
