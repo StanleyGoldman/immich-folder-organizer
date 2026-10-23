@@ -2,7 +2,7 @@
 
 A YAML-driven tool that declares Immich albums and the source paths whose assets should populate them. Runs as a one-shot container, typically on a cron, against a single Immich user. Replaces folder-derived album naming (the reference's model) with explicit declaration and full-sync reconciliation.
 
-For vocabulary: [CONTEXT.md](../CONTEXT.md). For the architectural rationale: [ADR-0001](./adr/0001-yaml-source-of-truth-full-sync.md).
+For vocabulary: [GLOSSARY.md](../GLOSSARY.md). For the architectural rationale: [ADR-0001](./adr/0001-yaml-source-of-truth-full-sync.md).
 
 ## Configuration
 
