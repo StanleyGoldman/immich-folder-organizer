@@ -1,6 +1,6 @@
 ## Tests
 
-Run `scripts/test.sh` (pytest in Docker; arguments pass through to pytest).
+Run `make ci`. For one file: `uv run pytest tests/test_x.py`. `make fix` applies ruff's auto-fixes. CI runs the same targets; see `docs/ci.md`.
 
 ## Agent skills
 

@@ -1,0 +1,119 @@
+# Checks for pull requests and pushes to main. See docs/ci.md.
+#
+# Keep this file named `ci.yml`. Woodpecker names the GitHub check after the
+# workflow file, and the `Main` ruleset requires `ci/woodpecker/pr/ci`:
+# renamed, every pull request waits for a check that never arrives.
+#
+# Every step runs a Makefile target, so a green `make ci` locally predicts a
+# green pipeline. Keep logic in the Makefile: Woodpecker substitutes `$VAR` in
+# `commands:` before the shell sees it.
+#
+# No path filter: a required check has to report on every pull request.
+when:
+  - event: pull_request
+  - event: push
+    branch: main
+
+# oldhermit agents have the socket_proxy network and /cache/agent
+labels:
+  location: oldhermit
+
+# fetch-target-branch and a full clone, for merge-base diffs against
+# origin/<target branch> (coverage-diff, coverage-base, the PR stats)
+clone:
+  - name: git
+    image: woodpeckerci/plugin-git:2.10.0
+    settings:
+      fetch-target-branch: true
+      partial: false
+
+variables:
+  # Built by the ci-image step from .woodpecker/Dockerfile; never pushed
+  - &ci_image immich-folder-organizer-ci:latest
+  - &uv_env
+    # Shared by every oldhermit agent; uv's cache is safe for concurrent use
+    UV_CACHE_DIR: /cache/agent/immich-folder-organizer/uv
+    # The cache and the checkout are on different filesystems
+    UV_LINK_MODE: copy
+    # Each step's own environment, in its container: parallel steps share
+    # the workspace, and concurrent installs into one .venv collide
+    UV_PROJECT_ENVIRONMENT: /tmp/venv
+    # Fail on a stale uv.lock instead of rewriting it
+    UV_LOCKED: "1"
+    # Use the image's Python 3.11
+    UV_PYTHON_DOWNLOADS: never
+  - &docker_env
+    DOCKER_HOST: tcp://socket-proxy:2375
+    DOCKER_BUILDKIT: "0"
+
+steps:
+  # No `when:` here: every step depends on this one, and a step whose
+  # dependency is filtered out by its `when:` rejects the whole pipeline.
+  # (`report` can depend on `test` only because both run on pull_request alone.)
+  - name: ci-image
+    image: docker:27-cli
+    environment:
+      <<: *docker_env
+    commands:
+      - tar -c .woodpecker/Dockerfile | docker build -t immich-folder-organizer-ci:latest -f .woodpecker/Dockerfile -
+
+  # -k so format still runs and reports when lint fails
+  - name: lint
+    image: *ci_image
+    depends_on: [ci-image]
+    environment:
+      <<: *uv_env
+    commands:
+      - make -k lint format
+
+  - name: types
+    image: *ci_image
+    depends_on: [ci-image]
+    environment:
+      <<: *uv_env
+    commands:
+      - make types
+
+  # -k so the coverage reports are written even when tests fail; those two
+  # targets never fail, so the step's status is pytest's
+  - name: test
+    image: *ci_image
+    depends_on: [ci-image]
+    environment:
+      <<: *uv_env
+    commands:
+      - make -k test coverage-diff coverage-base BASE=origin/${CI_COMMIT_TARGET_BRANCH}
+    when:
+      - event: pull_request
+
+  - name: test-main
+    image: *ci_image
+    depends_on: [ci-image]
+    environment:
+      <<: *uv_env
+    commands:
+      - make test
+    when:
+      - event: push
+
+  - name: image
+    image: *ci_image
+    depends_on: [ci-image]
+    environment:
+      <<: *docker_env
+    commands:
+      - make image TAG=${CI_PIPELINE_NUMBER}
+
+  # One `when:` item: items are OR'd, so a separate `status` item would also
+  # run this on pushes to main
+  - name: report
+    image: *ci_image
+    depends_on: [lint, types, test, image]
+    environment:
+      GITHUB_TOKEN:
+        from_secret: github_token
+    commands:
+      - python3 scripts/ci/pr_report.py
+    when:
+      - event: pull_request
+        status: [success, failure]

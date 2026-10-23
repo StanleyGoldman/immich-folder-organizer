@@ -1,7 +1,8 @@
 """Tests for share_with reconciliation (slice 9)."""
+
 import textwrap
-import pytest
 from unittest.mock import MagicMock
+
 from immich_folder_organizer.config import AlbumConfig, ShareEntry, load_config
 from immich_folder_organizer.reconciler import reconcile_shares
 

@@ -1,0 +1,6 @@
+.venv
+.git
+reports
+.*_cache
+tests
+.claude

@@ -1,7 +1,8 @@
-import os
 import textwrap
+
 import pytest
-from immich_folder_organizer.config import load_config, load_env, ConfigError
+
+from immich_folder_organizer.config import ConfigError, load_config, load_env
 
 
 def _yaml(text, tmp_path):

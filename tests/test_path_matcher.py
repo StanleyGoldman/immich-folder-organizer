@@ -1,4 +1,3 @@
-import pytest
 from immich_folder_organizer.path_matcher import is_member
 
 

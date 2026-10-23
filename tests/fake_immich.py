@@ -3,6 +3,7 @@
 Bodies follow the Immich v3.3.5 API shape, so the real immichpy models
 parse them. Use the `server` and `client` fixtures from conftest.py.
 """
+
 import asyncio
 import threading
 

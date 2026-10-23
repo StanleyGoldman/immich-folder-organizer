@@ -1,10 +1,11 @@
 """Tests for orphan album deletion (slice 10)."""
+
 import textwrap
-import pytest
 from unittest.mock import MagicMock
+
 from immich_folder_organizer.config import load_config
-from immich_folder_organizer.reconciler import find_orphaned_albums
 from immich_folder_organizer.marker import with_marker
+from immich_folder_organizer.reconciler import find_orphaned_albums
 
 
 def _album(name, description=""):

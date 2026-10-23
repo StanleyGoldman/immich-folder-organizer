@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, field
-from typing import Optional
+
 import yaml
 
 
@@ -19,11 +19,11 @@ class AlbumConfig:
     name: str
     paths: list
     exclude: list = field(default_factory=list)
-    description: Optional[str] = None
-    sort_order: Optional[str] = None
-    thumbnail: Optional[str] = None
-    comments_and_likes: Optional[bool] = None
-    share_with: Optional[list] = None
+    description: str | None = None
+    sort_order: str | None = None
+    thumbnail: str | None = None
+    comments_and_likes: bool | None = None
+    share_with: list | None = None
 
 
 @dataclass
@@ -50,7 +50,9 @@ def load_config(path: str) -> Config:
         if "name" not in entry:
             raise ConfigError(f"Album entry {i} is missing required field 'name'")
         if "paths" not in entry:
-            raise ConfigError(f"Album '{entry.get('name', i)}' is missing required field 'paths'")
+            raise ConfigError(
+                f"Album '{entry.get('name', i)}' is missing required field 'paths'"
+            )
 
         share_with = None
         if "share_with" in entry:
@@ -91,14 +93,13 @@ def load_env() -> Env:
             "Set exactly one of IMMICH_API_KEY or IMMICH_API_KEY_FILE, not both"
         )
     if not api_key_val and not api_key_file:
-        raise ConfigError(
-            "One of IMMICH_API_KEY or IMMICH_API_KEY_FILE is required"
-        )
+        raise ConfigError("One of IMMICH_API_KEY or IMMICH_API_KEY_FILE is required")
 
     if api_key_file:
         with open(api_key_file) as f:
             api_key = f.read().strip()
     else:
+        assert api_key_val  # guaranteed by the checks above
         api_key = api_key_val
 
     apply = os.environ.get("APPLY", "") == "1"

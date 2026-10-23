@@ -1,5 +1,9 @@
-import pytest
-from immich_folder_organizer.marker import has_marker, with_marker, extract_user_text, MARKER
+from immich_folder_organizer.marker import (
+    MARKER,
+    extract_user_text,
+    has_marker,
+    with_marker,
+)
 
 
 def test_has_marker_detects_marker():

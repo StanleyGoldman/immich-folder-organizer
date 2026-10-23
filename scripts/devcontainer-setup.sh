@@ -41,10 +41,4 @@ git config --global --add safe.directory '/workspace/*'
 # --- Create venv and install Python dependencies ---
 # The venv must be created here (not in the Dockerfile) because the workspace
 # is a bind mount that shadows anything baked into the image at this path.
-if [ ! -x /workspace/immich-folder-organizer/.venv/bin/python ]; then
-	uv venv /workspace/immich-folder-organizer/.venv
-fi
-
-if [ -f requirements.txt ]; then
-	uv pip install --python /workspace/immich-folder-organizer/.venv/bin/python -r requirements.txt
-fi
+uv sync

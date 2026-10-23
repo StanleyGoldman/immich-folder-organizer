@@ -1,7 +1,6 @@
-import io
 import logging
-import pytest
 from unittest.mock import MagicMock
+
 from immich_folder_organizer.executor import Executor
 
 
@@ -117,7 +116,6 @@ def test_ensure_album_adopts_unmarked_existing(caplog):
 
 
 def test_ensure_album_dry_run_adopts_without_update(caplog):
-    from immich_folder_organizer.marker import MARKER
 
     client = MagicMock()
     existing = MagicMock()

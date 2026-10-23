@@ -3,6 +3,7 @@
 The real immichpy client and models are exercised end to end; only the
 server is fake.
 """
+
 import uuid
 
 from tests.fake_immich import album, asset, search_response
@@ -15,7 +16,8 @@ USER_ID = "c0000000-0000-4000-8000-000000000001"
 
 def test_get_all_assets_parses_v3_search_response(server, client):
     server.route(
-        "POST", "/api/search/metadata",
+        "POST",
+        "/api/search/metadata",
         lambda body: search_response([asset(ASSET_1, "/photos/a.jpg")]),
     )
 
@@ -56,7 +58,8 @@ def test_get_album_asset_ids_lists_timeline_and_archived_album_assets(server, cl
         "archive": [asset(ASSET_2, "/photos/b.jpg")],
     }
     server.route(
-        "POST", "/api/search/metadata",
+        "POST",
+        "/api/search/metadata",
         lambda body: search_response(by_visibility[body["visibility"]]),
     )
 
@@ -68,7 +71,6 @@ def test_get_album_asset_ids_lists_timeline_and_archived_album_assets(server, cl
     ]
     bodies = [r[3] for r in server.requests_to("POST", "/api/search/metadata")]
     assert all(b["albumIds"] == [ALBUM_ID] for b in bodies)
-
 
 
 def test_get_all_albums_excludes_albums_shared_with_the_user(server, client):

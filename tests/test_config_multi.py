@@ -1,6 +1,7 @@
 """Tests for multi-album, multi-path config parsing (slice 5)."""
+
 import textwrap
-import pytest
+
 from immich_folder_organizer.config import load_config
 
 
@@ -46,7 +47,10 @@ def test_exclude_paths_parsed(tmp_path):
         tmp_path,
     )
     config = load_config(path)
-    assert config.albums[0].exclude == ["/photos/2024/private", "/photos/2024/_thumbnails"]
+    assert config.albums[0].exclude == [
+        "/photos/2024/private",
+        "/photos/2024/_thumbnails",
+    ]
 
 
 def test_multiple_paths_per_album(tmp_path):
