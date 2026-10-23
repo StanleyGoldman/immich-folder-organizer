@@ -27,7 +27,7 @@ extend-select = ["I"]
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
-files = ["immich_folder_organizer", "tests"]
+files = ["immich_folder_organizer", "tests", "scripts"]
 
 [tool.coverage.run]
 source = ["immich_folder_organizer"]

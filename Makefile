@@ -8,10 +8,12 @@ SHELL := bash
 # Branch that coverage-diff and coverage-base compare against; CI passes
 # BASE=origin/<target branch>
 BASE ?= origin/main
+# Tag suffix for the image check; CI passes TAG=<pipeline number>
+TAG ?= local
 # Worktree for the merge-base run; must be outside the checkout
 BASE_DIR ?= /tmp/immich-folder-organizer-base
 
-.PHONY: ci lint format types test coverage-diff coverage-base fix
+.PHONY: ci lint format types test image coverage-diff coverage-base fix
 
 # Run a check, keeping its output in reports/<name>.log and its exit code in
 # reports/<name>.status for scripts/ci/pr_report.py, then exit with that code
@@ -35,6 +37,13 @@ types:
 
 test:
 	$(call check,test,uv run pytest --cov --cov-report=xml:reports/coverage.xml --junitxml=reports/junit.xml)
+
+# Build the production image, record its size in reports/image.size, then
+# remove it. Not part of `ci`: needs Docker, and CI runs it as its own step.
+image:
+	$(call check,image,docker build -t immich-folder-organizer:ci-$(TAG) .)
+	@docker image inspect -f '{{.Size}}' immich-folder-organizer:ci-$(TAG) > reports/image.size
+	@docker rmi immich-folder-organizer:ci-$(TAG) > /dev/null
 
 # Coverage of the lines changed since $(BASE); reported, never fails the build
 coverage-diff:
