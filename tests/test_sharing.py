@@ -66,6 +66,15 @@ def test_empty_share_with_removes_all():
     assert plan.to_add == []
 
 
+def test_album_owner_is_never_revoked():
+    """Immich v3 lists the album owner among the album users, as role owner."""
+    config = _config(share_with=[])
+    current = [_album_user("owner-id", "owner"), _album_user("u1", "viewer")]
+    plan = reconcile_shares(config, current_shares=current, all_users=ALL_USERS)
+    assert plan.to_remove == ["u1"]
+    assert plan.to_add == []
+
+
 def test_omit_share_with_skips_reconciliation():
     """share_with=None means do not touch shares."""
     config = _config(share_with=None)

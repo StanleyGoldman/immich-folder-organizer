@@ -52,7 +52,7 @@ def main():
             continue
 
         album_info = client.get_album_info(album_id)
-        current_ids = [a.id for a in album_info.assets]
+        current_ids = client.get_album_asset_ids(album_id)
         asset_plan = reconcile(album_cfg, current_ids, all_assets)
         executor.sync_assets(album_id, album_cfg.name, asset_plan)
 

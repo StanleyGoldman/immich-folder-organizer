@@ -105,7 +105,8 @@ def reconcile_shares(album_config, current_shares: list, all_users: list) -> Sha
             continue
         desired[user.id] = entry.role
 
-    current = {au.user.id: au.role for au in current_shares}
+    # Immich lists the album owner among its users; ownership isn't a share
+    current = {au.user.id: au.role for au in current_shares if au.role != "owner"}
 
     to_add = [
         (uid, role)

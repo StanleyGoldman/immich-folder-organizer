@@ -12,6 +12,7 @@ from immichpy.client.generated.models import (
     AddUsersDto,
     AlbumUserRole,
     AssetOrder,
+    AssetVisibility,
     UpdateAlbumDto,
 )
 from immichpy.client.generated.models.metadata_search_dto import MetadataSearchDto
@@ -34,7 +35,8 @@ class ImmichClient:
         return asyncio.run(_call())
 
     def get_all_albums(self) -> list:
-        return self._run(lambda c: c.albums.get_all_albums())
+        # Owned only: Immich v3 also returns albums shared with us by default
+        return self._run(lambda c: c.albums.get_all_albums(is_owned=True))
 
     def get_album_info(self, album_id: str) -> AlbumResponseDto:
         return self._run(lambda c: c.albums.get_album_info(id=album_id))
@@ -95,18 +97,39 @@ class ImmichClient:
         self._run(lambda c: c.albums.delete_album(id=_id))
 
     def get_all_assets(self) -> list:
-        """Fetch every asset in the library, paginated.
+        """Fetch every timeline asset in the library."""
+        return self._search_assets(visibility=AssetVisibility.TIMELINE)
+
+    def get_album_asset_ids(self, album_id: str) -> list:
+        """IDs of the album's timeline and archived assets.
+
+        Immich v3 no longer returns assets with the album, so this searches
+        by album instead. The two visibilities match what v2's album view
+        returned.
+        """
+        return [
+            asset.id
+            for visibility in (AssetVisibility.TIMELINE, AssetVisibility.ARCHIVE)
+            for asset in self._search_assets(album_ids=[album_id], visibility=visibility)
+        ]
+
+    def _search_assets(self, **filters) -> list:
+        """Run a metadata search with `filters`, following every page.
 
         Uses the `next_page` cursor from each response as the source of truth
         for pagination. The `total` field in the search response was previously
         used but it returns the count of items in the current batch, not the
         overall match count — so trusting it caused the loop to exit after
         the first page.
+
+        Immich v3 only fills `next_cursor` for requests that send `cursor`,
+        `filter` or `orderBy`; page-based requests like this one still get
+        `next_page`.
         """
         assets = []
         page = 1
         while True:
-            dto = MetadataSearchDto(page=page, size=_PAGE_SIZE)
+            dto = MetadataSearchDto(page=page, size=_PAGE_SIZE, **filters)
             result = self._run(lambda c, d=dto: c.search.search_assets(metadata_search_dto=d))
             page_items = result.assets.items
             if not page_items:
@@ -140,5 +163,6 @@ class ImmichClient:
 
     def revoke_share(self, album_id: str, user_id: str) -> None:
         _id = album_id
-        _uid = user_id
+        # Strict str in immichpy, though user IDs in its models are UUIDs
+        _uid = str(user_id)
         self._run(lambda c: c.albums.remove_user_from_album(id=_id, user_id=_uid))
