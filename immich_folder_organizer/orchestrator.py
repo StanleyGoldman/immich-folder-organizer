@@ -2,10 +2,15 @@ import logging
 import sys
 import time
 
-from .config import load_config, load_env, ConfigError
-from .immich_client import ImmichClient
+from .config import ConfigError, load_config, load_env
 from .executor import Executor
-from .reconciler import reconcile, reconcile_properties, reconcile_shares, find_orphaned_albums
+from .immich_client import ImmichClient
+from .reconciler import (
+    find_orphaned_albums,
+    reconcile,
+    reconcile_properties,
+    reconcile_shares,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,7 +29,7 @@ def main():
 
     try:
         config = load_config(env.config_file)
-    except (ConfigError, FileNotFoundError, Exception) as e:
+    except Exception as e:  # noqa: BLE001 - any load failure is fatal; log it, don't trace
         log.error("Failed to load config: %s", e)
         sys.exit(1)
 
@@ -39,7 +44,11 @@ def main():
 
     all_assets = client.get_all_assets()
     all_users = client.get_all_users()
-    log.info("Fetched %d asset(s) and %d user(s) from Immich", len(all_assets), len(all_users))
+    log.info(
+        "Fetched %d asset(s) and %d user(s) from Immich",
+        len(all_assets),
+        len(all_users),
+    )
 
     for album_cfg in config.albums:
         album_id = executor.ensure_album(album_cfg.name, album_cfg.description or "")
@@ -57,17 +66,27 @@ def main():
         executor.sync_assets(album_id, album_cfg.name, asset_plan)
 
         # After sync, the album's asset list is the newly reconciled set
-        album_assets = [a for a in all_assets if a.id in set(current_ids) - set(asset_plan.to_remove)]
+        album_assets = [
+            a
+            for a in all_assets
+            if a.id in set(current_ids) - set(asset_plan.to_remove)
+        ]
         album_assets += [a for a in all_assets if a.id in set(asset_plan.to_add)]
 
         prop_plan = reconcile_properties(album_cfg, album_info, album_assets)
         executor.sync_properties(album_id, album_cfg.name, prop_plan)
 
-        share_plan = reconcile_shares(album_cfg, album_info.album_users or [], all_users)
+        share_plan = reconcile_shares(
+            album_cfg, album_info.album_users or [], all_users
+        )
         executor.sync_shares(album_id, album_cfg.name, share_plan)
 
         if _is_noop(asset_plan, prop_plan, share_plan):
-            log.info("[ok] '%s' is up to date (%d asset(s))", album_cfg.name, len(current_ids))
+            log.info(
+                "[ok] '%s' is up to date (%d asset(s))",
+                album_cfg.name,
+                len(current_ids),
+            )
 
     if config.delete_orphaned_albums:
         _delete_orphaned_albums(client, executor, config)

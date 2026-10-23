@@ -1,8 +1,9 @@
 """Tests for album property reconciliation (description, sort_order,
 thumbnail, comments_and_likes) — slice 8."""
+
 import textwrap
-import pytest
 from unittest.mock import MagicMock
+
 from immich_folder_organizer.config import AlbumConfig, load_config
 from immich_folder_organizer.reconciler import reconcile_properties
 
@@ -11,7 +12,9 @@ def _config(**kwargs):
     return AlbumConfig(name="Album", paths=["/p"], **kwargs)
 
 
-def _existing(description="", sort_order=None, is_activity_enabled=None, thumbnail=None):
+def _existing(
+    description="", sort_order=None, is_activity_enabled=None, thumbnail=None
+):
     a = MagicMock()
     a.description = description
     a.order = sort_order
@@ -21,6 +24,7 @@ def _existing(description="", sort_order=None, is_activity_enabled=None, thumbna
 
 
 # --- description ---
+
 
 def test_declared_description_included_in_plan():
     config = _config(description="Ring Road")
@@ -43,6 +47,7 @@ def test_empty_description_clears_user_text():
 
 # --- sort_order ---
 
+
 def test_declared_sort_order_included():
     config = _config(sort_order="asc")
     plan = reconcile_properties(config, existing=None, album_assets=[])
@@ -57,6 +62,7 @@ def test_omitted_sort_order_not_in_plan():
 
 # --- comments_and_likes ---
 
+
 def test_declared_comments_and_likes_included():
     config = _config(comments_and_likes=True)
     plan = reconcile_properties(config, existing=None, album_assets=[])
@@ -70,6 +76,7 @@ def test_omitted_comments_and_likes_not_in_plan():
 
 
 # --- thumbnail ---
+
 
 def test_thumbnail_first_included():
     config = _config(thumbnail="first")
@@ -99,6 +106,7 @@ def test_thumbnail_omitted_not_in_plan():
 
 
 # --- config parsing ---
+
 
 def _yaml(text, tmp_path):
     p = tmp_path / "albums.yaml"

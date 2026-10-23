@@ -1,5 +1,5 @@
-import pytest
 from unittest.mock import MagicMock
+
 from immich_folder_organizer.config import AlbumConfig
 from immich_folder_organizer.reconciler import reconcile
 
@@ -83,7 +83,9 @@ def test_asset_in_album_not_under_path_is_removed():
 def test_full_diff_add_and_remove():
     config = _album_config(["/photos"])
     all_assets = [_asset("1", "/photos/a.jpg"), _asset("2", "/other/b.jpg")]
-    current_ids = ["2"]  # has asset that should be removed, missing one that should be added
+    current_ids = [
+        "2"
+    ]  # has asset that should be removed, missing one that should be added
 
     plan = reconcile(config, current_ids, all_assets)
 
@@ -167,7 +169,6 @@ def test_shared_asset_across_albums_reconciled_independently():
 def test_reconcile_markers_new_album_has_marker():
     """reconcile_album_state detects no album → create=True."""
     from immich_folder_organizer.reconciler import reconcile_album_state
-    from immich_folder_organizer.marker import MARKER
 
     config = _album_config(["/photos"])
     plan = reconcile_album_state(config, existing_album=None)
@@ -176,8 +177,8 @@ def test_reconcile_markers_new_album_has_marker():
 
 
 def test_reconcile_markers_managed_album_recognized():
+    from immich_folder_organizer.marker import with_marker
     from immich_folder_organizer.reconciler import reconcile_album_state
-    from immich_folder_organizer.marker import MARKER, with_marker
 
     existing = MagicMock()
     existing.id = "alb-1"

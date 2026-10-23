@@ -1,6 +1,5 @@
 import random as _random
 from dataclasses import dataclass, field
-from typing import Optional
 from uuid import UUID
 
 from .immich_client import AlbumUserRole
@@ -17,8 +16,8 @@ class AlbumPlan:
 @dataclass
 class SharePlan:
     skip: bool = False
-    to_add: list = field(default_factory=list)   # list of (user_id, role) tuples
-    to_remove: list = field(default_factory=list) # list of user IDs
+    to_add: list = field(default_factory=list)  # list of (user_id, role) tuples
+    to_remove: list = field(default_factory=list)  # list of user IDs
     missing_users: list = field(default_factory=list)
 
 
@@ -26,15 +25,15 @@ class SharePlan:
 class AlbumStatePlan:
     create: bool = False
     adopt: bool = False
-    album_id: Optional[UUID] = None
+    album_id: UUID | None = None
 
 
 @dataclass
 class PropertyPlan:
-    description: Optional[str] = None
-    sort_order: Optional[str] = None
-    is_activity_enabled: Optional[bool] = None
-    thumbnail_asset_id: Optional[UUID] = None
+    description: str | None = None
+    sort_order: str | None = None
+    is_activity_enabled: bool | None = None
+    thumbnail_asset_id: UUID | None = None
 
 
 def reconcile_album_state(album_config, existing_album) -> AlbumStatePlan:
@@ -66,12 +65,14 @@ def reconcile_properties(album_config, existing, album_assets: list) -> Property
         plan.is_activity_enabled = album_config.comments_and_likes
 
     if album_config.thumbnail is not None:
-        plan.thumbnail_asset_id = _resolve_thumbnail(album_config.thumbnail, album_assets)
+        plan.thumbnail_asset_id = _resolve_thumbnail(
+            album_config.thumbnail, album_assets
+        )
 
     return plan
 
 
-def _resolve_thumbnail(setting: str, album_assets: list) -> Optional[UUID]:
+def _resolve_thumbnail(setting: str, album_assets: list) -> UUID | None:
     if not album_assets:
         return None
     if setting == "first":
@@ -108,7 +109,9 @@ def reconcile_shares(album_config, current_shares: list, all_users: list) -> Sha
         desired[user.id] = entry.role
 
     # Immich lists the album owner among its users; ownership isn't a share
-    current = {au.user.id: au.role for au in current_shares if au.role != AlbumUserRole.OWNER}
+    current = {
+        au.user.id: au.role for au in current_shares if au.role != AlbumUserRole.OWNER
+    }
 
     to_add = [
         (uid, role)

@@ -3,6 +3,7 @@
 These catch API-shape breaks that unit tests with mocked clients miss,
 like v3 dropping `assets` from album responses.
 """
+
 import textwrap
 
 import pytest
@@ -96,12 +97,20 @@ def test_apply_reconciles_assets_properties_and_shares(immich, monkeypatch, tmp_
     assert _writes(immich) == [
         ("PUT", f"{album_path}/assets", {"ids": [NEW]}),
         ("DELETE", f"{album_path}/assets", {"ids": [STALE]}),
-        ("PATCH", album_path, {
-            "albumThumbnailAssetId": KEPT,
-            "description": with_marker("Trip"),
-            "order": "asc",
-        }),
-        ("PUT", f"{album_path}/users", {"albumUsers": [{"role": "editor", "userId": ALICE}]}),
+        (
+            "PATCH",
+            album_path,
+            {
+                "albumThumbnailAssetId": KEPT,
+                "description": with_marker("Trip"),
+                "order": "asc",
+            },
+        ),
+        (
+            "PUT",
+            f"{album_path}/users",
+            {"albumUsers": [{"role": "editor", "userId": ALICE}]},
+        ),
         ("DELETE", f"{album_path}/user/{BOB}", None),
     ]
 

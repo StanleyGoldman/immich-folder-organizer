@@ -1,19 +1,17 @@
 import asyncio
 import logging
-from typing import Optional
 from uuid import UUID
 
 from immichpy import AsyncClient
 from immichpy.client.generated.models import (
-    AlbumResponseDto,
-    AssetResponseDto,
-    BulkIdsDto,
-    CreateAlbumDto,
-    AlbumUserAddDto,
     AddUsersDto,
+    AlbumResponseDto,
+    AlbumUserAddDto,
     AlbumUserRole,
     AssetOrder,
     AssetVisibility,
+    BulkIdsDto,
+    CreateAlbumDto,
     UpdateAlbumDto,
 )
 from immichpy.client.generated.models.metadata_search_dto import MetadataSearchDto
@@ -37,7 +35,9 @@ class ImmichClient:
 
     def _run(self, coro_fn):
         async def _call():
-            async with AsyncClient(api_key=self._api_key, base_url=self._base_url) as client:
+            async with AsyncClient(
+                api_key=self._api_key, base_url=self._base_url
+            ) as client:
                 return await coro_fn(client)
 
         return asyncio.run(_call())
@@ -49,7 +49,7 @@ class ImmichClient:
     def get_album_info(self, album_id: UUID) -> AlbumResponseDto:
         return self._run(lambda c: c.albums.get_album_info(id=album_id))
 
-    def get_album_by_name(self, name: str) -> Optional[AlbumResponseDto]:
+    def get_album_by_name(self, name: str) -> AlbumResponseDto | None:
         albums = self.get_all_albums()
         for album in albums:
             if album.album_name == name:
@@ -76,7 +76,9 @@ class ImmichClient:
 
         dto = UpdateAlbumDto(**dto_kwargs)
         _id = album_id
-        return self._run(lambda c: c.albums.update_album_info(id=_id, update_album_dto=dto))
+        return self._run(
+            lambda c: c.albums.update_album_info(id=_id, update_album_dto=dto)
+        )
 
     def add_assets(self, album_id: UUID, asset_ids: list[UUID]) -> None:
         if not asset_ids:
@@ -118,7 +120,9 @@ class ImmichClient:
         return [
             asset.id
             for visibility in (AssetVisibility.TIMELINE, AssetVisibility.ARCHIVE)
-            for asset in self._search_assets(album_ids=[album_id], visibility=visibility)
+            for asset in self._search_assets(
+                album_ids=[album_id], visibility=visibility
+            )
         ]
 
     def _search_assets(self, **filters) -> list:
@@ -138,12 +142,19 @@ class ImmichClient:
         page = 1
         while True:
             dto = MetadataSearchDto(page=page, size=_PAGE_SIZE, **filters)
-            result = self._run(lambda c, d=dto: c.search.search_assets(metadata_search_dto=d))
+            result = self._run(
+                lambda c, d=dto: c.search.search_assets(metadata_search_dto=d)
+            )
             page_items = result.assets.items
             if not page_items:
                 break
             assets.extend(page_items)
-            log.debug("Fetched assets page %d (%d items, %d total so far)", page, len(page_items), len(assets))
+            log.debug(
+                "Fetched assets page %d (%d items, %d total so far)",
+                page,
+                len(page_items),
+                len(assets),
+            )
 
             next_page = result.assets.next_page
             if not next_page:
@@ -165,9 +176,7 @@ class ImmichClient:
             role=AlbumUserRole(role),
         )
         _dto = AddUsersDto(album_users=[_user])
-        self._run(
-            lambda c: c.albums.add_users_to_album(id=_id, add_users_dto=_dto)
-        )
+        self._run(lambda c: c.albums.add_users_to_album(id=_id, add_users_dto=_dto))
 
     def revoke_share(self, album_id: UUID, user_id: UUID) -> None:
         _id = album_id
