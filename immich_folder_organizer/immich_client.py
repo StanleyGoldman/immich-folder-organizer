@@ -24,6 +24,13 @@ log = logging.getLogger(__name__)
 
 
 class ImmichClient:
+    """The organizer's only connection to Immich.
+
+    The server behavior each method relies on (defaults, filters, response
+    contents) is listed in docs/immich-api.md. Check it when upgrading
+    immichpy or Immich.
+    """
+
     def __init__(self, base_url: str, api_key: str):
         self._base_url = base_url
         self._api_key = api_key
