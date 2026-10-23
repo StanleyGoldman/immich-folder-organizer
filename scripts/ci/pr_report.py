@@ -316,7 +316,9 @@ def git_stats(base: str) -> dict[str, int]:
     }
 
 
-def _request(method: str, path: str, token: str, body: dict | None = None):
+def _request(
+    method: str, path: str, token: str, body: dict | None = None, ok_404: bool = False
+):
     """Call the GitHub API, retrying 5xx and connection errors."""
     data = json.dumps(body).encode() if body is not None else None
     for attempt in range(4):
@@ -335,6 +337,8 @@ def _request(method: str, path: str, token: str, body: dict | None = None):
                 raw = resp.read()
                 return json.loads(raw) if raw else None
         except urllib.error.HTTPError as e:
+            if e.code == 404 and ok_404:
+                return None
             if e.code < 500:
                 print(
                     f"GitHub refused {method} {path}: {e.code} {e.read().decode(errors='replace')}"
@@ -366,7 +370,10 @@ def replace_comment(repo: str, pr: str, body: str, token: str) -> None:
         ]
         page += 1
     for comment_id in ours:
-        _request("DELETE", f"/repos/{repo}/issues/comments/{comment_id}", token)
+        # 404: an overlapping run on this PR already deleted it
+        _request(
+            "DELETE", f"/repos/{repo}/issues/comments/{comment_id}", token, ok_404=True
+        )
     posted = _request(
         "POST", f"/repos/{repo}/issues/{pr}/comments", token, {"body": body}
     )

@@ -44,8 +44,9 @@ variables:
     DOCKER_BUILDKIT: "0"
 
 steps:
-  # No `when:` here: filtering a step that others depend on rejects the
-  # whole pipeline
+  # No `when:` here: every step depends on this one, and a step whose
+  # dependency is filtered out by its `when:` rejects the whole pipeline.
+  # (`report` can depend on `test` only because both run on pull_request alone.)
   - name: ci-image
     image: docker:27-cli
     environment:

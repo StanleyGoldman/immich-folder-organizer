@@ -1,6 +1,6 @@
 ## Tests
 
-Run `make ci` (ruff lint and format, mypy, pytest with coverage; needs `uv`). For one file: `uv run pytest tests/test_x.py`. `make fix` applies ruff's auto-fixes. CI runs the same targets; see `docs/ci.md`.
+Run `make ci`. For one file: `uv run pytest tests/test_x.py`. `make fix` applies ruff's auto-fixes. CI runs the same targets; see `docs/ci.md`.
 
 ## Agent skills
 
