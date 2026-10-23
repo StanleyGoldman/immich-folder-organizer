@@ -26,7 +26,7 @@ The Makefile is the single entry point. Every CI step runs a Makefile target, so
 | `report` | `python3 scripts/ci/pr_report.py` | pull request, even when checks fail |
 
 - **CI image:** `python:3.11-slim` with git, make, uv 0.13.5 and the Docker CLI. It is built on oldhermit's Docker daemon through `socket-proxy` (`DOCKER_BUILDKIT=0`), and it is never pushed to a registry. It holds tools only. Each step installs the project's dependencies from `uv.lock`, so concurrent PRs never share project dependencies. They do share the `:latest` tool image, so a PR that changes `.woodpecker/Dockerfile` can briefly hand a concurrent pipeline its tools.
-- **uv cache:** `/cache/agent/immich-folder-organizer/uv`. `/cache/agent` is a per-host directory that every oldhermit agent mounts. `UV_LOCKED=1` makes a stale `uv.lock` fail the step instead of being rewritten.
+- **uv cache and environments:** the cache is `/cache/agent/immich-folder-organizer/uv`. `/cache/agent` is a per-host directory that every oldhermit agent mounts, and uv's cache is safe for concurrent use. The environment is not: the parallel steps share one workspace, and concurrent installs into one `.venv` collide. Each step therefore installs into its own container's `/tmp/venv` (`UV_PROJECT_ENVIRONMENT`). `UV_LOCKED=1` makes a stale `uv.lock` fail the step instead of being rewritten.
 - **Coverage deltas:** `coverage-base` runs the suite at the merge-base in a worktree outside the checkout. If the base predates uv (it has no `uv.lock`), the report shows "n/a" and omits the deltas.
 - **uv version:** pinned to 0.13.5 in the CI image, the production `Dockerfile` and the devcontainer. Bump all three together.
 

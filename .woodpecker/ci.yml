@@ -35,6 +35,9 @@ variables:
     UV_CACHE_DIR: /cache/agent/immich-folder-organizer/uv
     # The cache and the checkout are on different filesystems
     UV_LINK_MODE: copy
+    # Each step's own environment, in its container: parallel steps share
+    # the workspace, and concurrent installs into one .venv collide
+    UV_PROJECT_ENVIRONMENT: /tmp/venv
     # Fail on a stale uv.lock instead of rewriting it
     UV_LOCKED: "1"
     # Use the image's Python 3.11

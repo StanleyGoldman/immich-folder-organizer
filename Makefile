@@ -58,7 +58,7 @@ coverage-base:
 	git cat-file -e $$mb:uv.lock 2>/dev/null || { echo "coverage-base: $$mb predates uv; skipping"; exit 0; }; \
 	git worktree remove --force $(BASE_DIR) 2>/dev/null; rm -rf $(BASE_DIR); \
 	git worktree add --detach $(BASE_DIR) $$mb && \
-	(cd $(BASE_DIR) && uv run pytest -q --cov --cov-report=xml:$(CURDIR)/reports/base/coverage.xml --junitxml=$(CURDIR)/reports/base/junit.xml) \
+	(cd $(BASE_DIR) && UV_PROJECT_ENVIRONMENT=$(BASE_DIR)/.venv uv run pytest -q --cov --cov-report=xml:$(CURDIR)/reports/base/coverage.xml --junitxml=$(CURDIR)/reports/base/junit.xml) \
 	|| rm -f reports/base/*.xml; \
 	git worktree remove --force $(BASE_DIR)
 
